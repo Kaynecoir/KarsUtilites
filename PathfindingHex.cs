@@ -9,6 +9,17 @@ namespace Kars.Pathfinding
 	{
 		private const int MOVE_STRAIGHT_COST = 10;
 
+		private static PathfindingHex instance;
+		public static PathfindingHex Instance
+		{
+			get
+			{
+				if (instance == null)
+					instance = new PathfindingHex();
+				return instance;
+			}
+		}
+
 		private HexGrid<HexPathNode> hexGrid;
 		private HexPathNode startNode;
 		private HexPathNode endNode;
@@ -17,7 +28,7 @@ namespace Kars.Pathfinding
 
 		public delegate void GridFunc(HexPathNode node);
 		public event GridFunc AddToOpenList, AddToClosedList, FindWay, ChangeWalking;
-		public PathfindingHex(int height, int width, float radius, Vector3 positionToWorld, bool isVertical = false, bool isDebugging = false)
+		public PathfindingHex(int height = 1, int width = 1, float radius = 1.0f, Vector3 positionToWorld = default(Vector3), bool isVertical = false, bool isDebugging = false)
 		{
 			Vector3 pos = new Vector3(radius * (isVertical ? Mathf.Sin(Mathf.PI / 3) : 1), radius * (!isVertical ? Mathf.Sin(Mathf.PI / 3) : 1));
 			hexGrid = new HexGrid<HexPathNode>(height, width, radius, positionToWorld, pos, isVertical);
@@ -52,6 +63,23 @@ namespace Kars.Pathfinding
 		public HexGrid<HexPathNode> GetGrid()
 		{
 			return hexGrid;
+		}
+		public void SetGrid(HexGrid<HexPathNode> hexGrid)
+		{
+			SetGrid(hexGrid.Height, hexGrid.Width, hexGrid.Radius, default(Vector3), hexGrid.isVertical);
+		}
+		public void SetGrid(int height, int width, float radius, Vector3 positionToWorld, bool isVertical)
+		{
+			Vector3 pos = new Vector3(radius * (isVertical ? Mathf.Sin(Mathf.PI / 3) : 1), radius * (!isVertical ? Mathf.Sin(Mathf.PI / 3) : 1));
+			hexGrid = new HexGrid<HexPathNode>(height, width, radius, positionToWorld, pos, isVertical);
+			for (int y = 0; y < hexGrid.Height; y++)
+			{
+				for (int x = 0; x < hexGrid.Width; x++)
+				{
+					hexGrid[y, x].SetValue(new HexPathNode(hexGrid[y, x]));
+				}
+			}
+			SetStartNode(0, 0);
 		}
 		public void SetWalking(Vector3 pos, bool value)
 		{
