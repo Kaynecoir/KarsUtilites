@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 namespace Kars.Pathfinding
@@ -19,7 +19,6 @@ namespace Kars.Pathfinding
 				return instance;
 			}
 		}
-
 		private HexGrid<HexPathNode> hexGrid;
 		private HexPathNode startNode;
 		private HexPathNode endNode;
@@ -28,10 +27,10 @@ namespace Kars.Pathfinding
 
 		public delegate void GridFunc(HexPathNode node);
 		public event GridFunc AddToOpenList, AddToClosedList, FindWay, ChangeWalking;
+
 		public PathfindingHex(int height = 1, int width = 1, float radius = 1.0f, Vector3 positionToWorld = default(Vector3), bool isVertical = false, bool isDebugging = false)
 		{
-			Vector3 pos = new Vector3(radius * (isVertical ? Mathf.Sin(Mathf.PI / 3) : 1), radius * (!isVertical ? Mathf.Sin(Mathf.PI / 3) : 1));
-			hexGrid = new HexGrid<HexPathNode>(height, width, radius, positionToWorld, pos, isVertical);
+			hexGrid = new HexGrid<HexPathNode>(height, width, radius, positionToWorld, isVertical);
 			for (int y = 0; y < hexGrid.Height; y++)
 			{
 				for (int x = 0; x < hexGrid.Width; x++)
@@ -45,8 +44,7 @@ namespace Kars.Pathfinding
 		}
 		public PathfindingHex(int height, int width, float radius, Vector3 positionToWorld, Func<Hexagon<HexPathNode>, HexPathNode> createHexObject, bool isVertical = false, bool isDebugging = false)
 		{
-			Vector3 pos = new Vector3(radius * (isVertical ? Mathf.Sin(Mathf.PI / 3) : 1), radius * (!isVertical ? Mathf.Sin(Mathf.PI / 3) : 1));
-			hexGrid = new HexGrid<HexPathNode>(height, width, radius, positionToWorld, pos, createHexObject, isVertical);
+			hexGrid = new HexGrid<HexPathNode>(height, width, radius, positionToWorld, createHexObject, isVertical);
 			for (int y = 0; y < hexGrid.Height; y++)
 			{
 				for (int x = 0; x < hexGrid.Width; x++)
@@ -70,8 +68,7 @@ namespace Kars.Pathfinding
 		}
 		public void SetGrid(int height, int width, float radius, Vector3 positionToWorld, bool isVertical)
 		{
-			Vector3 pos = new Vector3(radius * (isVertical ? Mathf.Sin(Mathf.PI / 3) : 1), radius * (!isVertical ? Mathf.Sin(Mathf.PI / 3) : 1));
-			hexGrid = new HexGrid<HexPathNode>(height, width, radius, positionToWorld, pos, isVertical);
+			hexGrid = new HexGrid<HexPathNode>(height, width, radius, positionToWorld, isVertical);
 			for (int y = 0; y < hexGrid.Height; y++)
 			{
 				for (int x = 0; x < hexGrid.Width; x++)
@@ -228,4 +225,84 @@ namespace Kars.Pathfinding
 			return lowerFCostNode;
 		}
 	}
+
+	class FindHexMapVisual
+	{
+		private HexGrid<HexPathNode> grid;
+		MeshFilter meshFilter;
+		Transform transform;
+
+		Vector3[] vertices;
+		Vector3[] normals;
+		Vector2[] uv;
+		int[] triangles;
+
+		public FindHexMapVisual(PathfindingHex pathfinding, MeshFilter meshFilter, Transform transform)
+		{
+			this.grid = pathfinding.GetGrid();
+			this.grid.ChangeValue += UpdateFindMapVisual;
+			this.meshFilter = meshFilter;
+			this.transform = transform;
+			//pathfinding.AddToOpenList += (HexPathNode node) => { UpdateNodeOfMapVisual(node, 0.2f);/*UnityEngine.Debug.Log(node);*/ };
+			//pathfinding.AddToClosedList += (HexPathNode node) => { UpdateNodeOfMapVisual(node, 0.6f); };
+			//pathfinding.FindWay += (HexPathNode node) =>
+			//{
+			//	HexPathNode current = node;
+			//	while (current != null)
+			//	{
+			//		UpdateNodeOfMapVisual(current, 0.99f);
+			//		current = current.CameFromNode;
+			//	}
+			//};
+			pathfinding.ChangeWalking += (HexPathNode node) => { UpdateNodeOfMapVisual(node, 0.1f); };
+
+			grid.CreateMeshArray(out vertices, out normals, out uv, out triangles);
+
+
+			UpdateFindMapVisual();
+		}
+
+		public void ClearMap()
+		{
+			UpdateFindMapVisual();
+		}
+		public void UpdateFindMapVisual()
+		{
+			for (int y = 0; y < grid.Height; y++)
+			{
+				for (int x = 0; x < grid.Width; x++)
+				{
+					int index = y * grid.Width + x;
+					Vector2 uvPoint = (!grid[y, x].Value.IsWalking) ? new Vector2(0.8f, 0.0f) : new Vector3(0.1f, 0.0f);
+					grid.AddHexMeshToArray(grid[y, x], vertices, normals, uv, triangles, index, uvPoint);
+				}
+			}
+			Mesh mesh = new Mesh();
+			mesh.name = "GridMesh";
+			mesh.vertices = vertices;
+			mesh.normals = normals;
+			mesh.uv = uv;
+			mesh.triangles = triangles;
+
+			meshFilter.mesh = mesh;
+		}
+
+		public void UpdateNodeOfMapVisual(HexPathNode node, float step)
+		{
+
+			int x = node.X, y = node.Y;
+			int index = y * grid.Width + x;
+			grid.AddHexMeshToArray(grid[y, x], vertices, normals, uv, triangles, index, new Vector2(step, 0.0f));
+
+			Mesh mesh = new Mesh();
+			mesh.name = "GridMesh";
+			mesh.vertices = vertices;
+			mesh.normals = normals;
+			mesh.uv = uv;
+			mesh.triangles = triangles;
+
+			meshFilter.mesh = mesh;
+		}
+	}
 }
+
