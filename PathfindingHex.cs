@@ -226,7 +226,7 @@ namespace Kars.Pathfinding
 		}
 	}
 
-	class FindHexMapVisual
+	public class FindHexMapVisual
 	{
 		private HexGrid<HexPathNode> grid;
 		MeshFilter meshFilter;

@@ -19,5 +19,10 @@ namespace Kars
 		public Vector3 worldPosition { get; private set; }
 		public Vector3[] corner { get; private set; }
 		public float Size { get; private set; }
+
+		public void SetValue(T val)
+		{
+			Value = val;
+		}
 	}
 }

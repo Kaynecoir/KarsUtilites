@@ -21,6 +21,21 @@ namespace Kars
 		{
 
 		}
+		public Grid(int height, int width, float size, Vector3 positionToWorld, bool isDebuging = false)
+		{
+			Height = height;
+			Width = width;
+			Size = size;
+			PositionToWorld = positionToWorld;
+			gridArray = new GridObject<T>[Height, Width];
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					gridArray[y, x] = new GridObject<T>();
+				}
+			}
+		}
 		public Grid(int height, int width, float size, Vector3 positionToWorld, Func<GridObject<T>> createGridObject, bool isDebuging = false)
 		{
 			Height = height;
@@ -82,34 +97,32 @@ namespace Kars
 
 			return new Vector3Int(x, y);
 		}
-		public void SetValue(Vector3 worldPosition, GridObject<T> gObj)
+		public void SetValue(Vector3 worldPosition, T val)
 		{
 			int x, y;
 			GetXY(worldPosition, out x, out y);
-			SetValue(x, y, gObj.Value);
+			SetValue(x, y, val);
 		}
-		public void SetValue(int x, int y, T value)
+		public void SetValue(int x, int y, T val)
 		{
 			if (x >= 0 && x < Width && y >= 0 && y < Height)
 			{
-				gridArray[y, x].Value = value;
-				//textMeshArray[pos.y, pos.x].text = gridArray[pos.y, pos.x].ToString();
+				gridArray[y, x].SetValue(val);
 				ChangeValue?.Invoke();
 			}
 		}
-		public T GetValue(Vector3 worldPosition)
+		public GridObject<T> GetValue(Vector3 worldPosition)
 		{
-			int x, y;
-			GetXY(worldPosition, out x, out y);
+			GetXY(worldPosition, out int x, out int y);
 			return GetValue(x, y);
 		}
-		public T GetValue(int x, int y)
+		public GridObject<T> GetValue(int x, int y)
 		{
 			if (x >= 0 && x < Width && y >= 0 && y < Height)
 			{
-				return gridArray[y, x].Value;
+				return gridArray[y, x];
 			}
-			else return default(T);
+			else return default(GridObject<T>);
 		}
 	}
 }
